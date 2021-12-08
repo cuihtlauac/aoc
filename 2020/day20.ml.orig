@@ -1,0 +1,140 @@
+let catch f x = try Some (f x, x) with _ -> None
+let maybe y f = function
+| Some x -> f x
+| None -> y
+
+(* Parse [.#]* string *)
+let to_int str = str |> String.to_seq |> Seq.fold_left (fun x y -> x * 2 + int_of_char y land 1) 0
+
+let rec bin_of_int len n = if len = 0 then "0b" else bin_of_int (len - 1) (n lsr 1) ^ string_of_int (n land 1)
+
+let range n = let rec loop u i = if n <= i then loop (i :: u) (i - 1) else u in loop []
+
+(* 8 bit rotation *)
+let rev = 
+    fun b -> (b land 0xf0) lsr 4 lor (b land 0x0f) lsl 4
+ |> fun b -> (b land 0xcc) lsr 2 lor (b land 0x33) lsl 2
+ |> fun b -> (b land 0xaa) lsr 1 lor (b land 0x55) lsl 1
+
+let merge i b = (i lsl 1) lor b
+let split x = (x lsr 1, x land 0x1fe)
+
+type id = int (* 144 = 12 * 12: number of tiles (4 bits). *)
+type orientation = int (* 8: D4 dihedral group order (3 bits). *) 
+type border = int * int (* 2^10: 10 bits *)
+type direction = int (* 4: E, N, W, S (2 bits). *)
+type tile = (int * int) array
+
+(* data: *)
+(* id * direction -> border *)
+(* id -> direction -> border *)
+
+(* symmetry: *)
+(* orientation * direction * border -> border *)
+(* orientation -> direction -> border -> border *)
+
+(* tbd: *)
+(* border * direction -> (id * orientation) option *)
+(* border -> direction -> (id * orientation) option *)
+
+module IntMap = Map.Make(Int)
+
+let circle  [|(i0, b0); (i1, b1); (i2, b2); (i3, b3)|] =
+            [|(i1, b1); (i2, b2); (i3, b3); (i0, b0)|]
+let shuffle [|(i0, b0); (i1, b1); (i2, b2); (i3, b3)|] = 
+            [|(i0, b1); (i3, b0); (i2, b3); (i1, b2)|]
+let rev_odd [|(i0, b0); ib1; (i2, b2); ib3|] = [|(rev i0, b0); ib1; (rev i2, b2); ib3|]
+
+let rot (t: tile) = t |> circle |> rev_odd
+let flip (t: tile) = t |> shuffle |> rev_odd (* horizontal *)
+let flop (t: tile) = t |> flip |> rot |> rot
+
+let t : tile = [|(6, 0); (19, 1); (58, 0); (13, 1)|]
+
+let circle' n (* 36 bits *) = n lsr 9 lor ((n land 0x1ff) lsl 27) 
+let shuffle' n (* 36 bits *) = (n land 0xff)
+                        lor ((n land (0xff lsl 9)) lsl 18)
+                        lor (n land (0xff lsl 18))
+                        lor ((n land (0xff lsl 27)) lsr 18)
+                        lor ((n land (0x40001 lsl 8)) lsl 9)
+                        lor ((n land (0x40001 lsl 17)) lsr 9)
+let shuffle'' n (* 36 bits *) = 
+     (n land 0x003fc00ff)
+lor ((n land 0x00001fe00) lsl 18)
+lor ((n land 0x7f8000000) lsr 18)
+lor ((n land 0x004000100) lsl 9)
+lor ((n land 0x800020000) lsr 9)
+
+let rev' n (* 36 bits *) =
+    let f n = (n land 0x3c000f0) lsr 4 lor (n land 0x03c000f) lsl 4 in
+    let g n = (n land 0x33000cc) lsr 2 lor (n land 0x0cc0033) lsl 2 in 
+    let h n = (n land 0x2a800aa) lsr 1 lor (n land 0x1540055) lsl 1 in
+    (n land 0xffc03ff00) lor (n |> f |> g |> h)
+
+let rot n = n |> circle' |> rev'
+let flip n = n |> shuffle'' |> rev'
+
+let border n = function
+| 0 -> (n land 0x0000003ff) lsl 1 lor (n lsr 35)
+| 1 -> (n land 0x00003ff00) lsr 8
+| 2 -> (n land 0x007fe0000) lsr 17
+| 3 -> (n land 0xffc000000) lsr 26
+| _ -> failwith "border"
+
+let orientation n = function
+| 0 -> n
+| 1 -> n |> rot
+| 2 -> n |> rot |> rot
+| 3 -> n |> rot |> rot |> rot
+| 4 -> n |> flip
+| 5 -> n |> rot |> flip
+| 6 -> n |> rot |> rot |> flip 
+| 7 -> n |> rot |> rot |> rot |> flip
+| _ -> failwith "orientation"
+
+let test border n =
+Printf.printf "%s\n" (sprintf00b 36 n);
+Printf.printf "%s\n" (sprintf00b 10 (border n 3) ^ String.make 26 '_');
+Printf.printf "%s\n" (String.make 9 '_' ^ sprintf00b 10 (border n 2) ^ String.make 17 '_');
+Printf.printf "%s\n" (String.make 18 '_' ^ sprintf00b 10 (border n 1) ^ String.make 8 '_');
+Printf.printf "%s\n" (String.make 27 '_' ^ sprintf00b 10 (border n 0))
+
+
+
+let index_of a x =
+    let rec loop i = if a.(i) = x then Some i else loop (i + 1) in
+    Option.bind (catch loop 0) fst
+
+let is_edge (a, b, c, d) x = x = a || x = b || x = c || x = d
+
+let is_neighbour a b = index_of b 
+a.(0).(0) 
+
+let north a = a.(0) |> fun n -> ((n land 510) lsr 1, n land 1) (* right to left *)
+let south a = a.(9) |> fun n -> ((n land 510) lsr 1, n lsr 9) (* right to left *)
+let east a = a |> Array.fold_left (fun x y -> x * 2 + y land 1) 0 |> fun n -> ((n land 510) lsr 1, n land 1) (* top down *)
+let west a = a |> Array.fold_left (fun x y -> x * 2 + y lsr 9) 0 |> fun n -> ((n land 510) lsr 1, n lsr 9) (* top down *)
+
+let read_tile cin =
+    let str = input_line cin in
+    let u = Array.init 10 (fun i -> cin |> input_line |> to_int) in
+    let _ = input_line cin in
+    (String.sub str 5 4 |> int_of_string, (east u, north u, west u, south u) |> canonic)
+
+let data = "day20.test" |> open_in |> Seq.unfold (catch read_tile) |> List.of_seq
+
+module EdgeMap = Map.Make(struct type t = int * int let compare = compare end)
+module TileMap = Map.Make(Int)
+
+let rec transp = function
+| [] -> []
+| [] :: _ -> []
+| u -> List.map List.hd u :: transp (List.map List.tl u)
+
+let f : (int * tile array) list -> (int * tile array) -> (int * (int * tile array) list) = fun u t ->
+
+
+let _ =
+    let data = "day20.input" |> open_in |> Seq.unfold (catch read_tile) |> TileMap.of_seq in
+
+    data |> List.map (f data) |> List.filter (fun (_, x) -> List.length x = 2) |> List.fold_left (fun res (id, _) -> res * id) 1
