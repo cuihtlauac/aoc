@@ -19,11 +19,11 @@ let infer u x =
   let test_length n set = length set = n in
   if x = List.find (test_length 2) u then 1
   else if x = List.find (test_length 7) u then 8
-  else let l7, l4 = u |> List.find (test_length 3), u |> List.find (test_length 4) in if x = l7 then 7
-  else if l4 = x then 4
+  else let l7 = u |> List.find (test_length 3) in if x = l7 then 7
+  else let l4 = u |> List.find (test_length 4) in if x = l4 then 4
   else let l3, s25 = u |> List.filter (test_length 5) |> List.partition (limp l7) in if [x] = l3 then 3
   else let l9, s06 = u |> List.filter (test_length 6) |> List.partition (limp l4) in if [x] = l9 then 9
-  else let l0, l6 = s06 |> List.partition (limp l7) in if [x] = l0 then 0
+  else let l0, l6 = List.partition (limp l7) s06 in if [x] = l0 then 0
   else if [x] = l6 then 6
   else if x = List.find (Fun.flip limp (List.hd l9)) s25 then 5
   else 2
