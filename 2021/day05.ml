@@ -1,7 +1,3 @@
-let rec span f acc = function
-| x :: u when f x -> span f (x :: acc) u
-| u -> acc, u 
-
 let line x1 y1 x2 y2 =
     let min, max = min (x1, y1) (x2, y2), max (x1, y1) (x2, y2) in
     let delta_x = compare (fst max) (fst min) in
@@ -9,7 +5,7 @@ let line x1 y1 x2 y2 =
     Seq.unfold (fun xy -> if max >= xy then Some (xy, (fst xy + delta_x, snd xy + delta_y)) else None) min
 
 let rec loop = function
-| x :: u -> let xs, u = span ((=) x) [] u in loop u + compare (List.length xs) 0 
+| x :: u -> let xs, u = Misc.span ((=) x) [] u in loop u + compare (List.length xs) 0
 | [] -> 0
 
 let f path =

@@ -1,5 +1,4 @@
-
-let f1 path =
+let f path =
     path
     |> open_in
     |> Seq.unfold Misc.input_line
@@ -8,9 +7,9 @@ let f1 path =
     |> Seq.fold_left (fun (i, x) str -> let y = int_of_string str in i + max 0 (compare y x), y) (0, x)
     |> fst 
 
-let _ = Misc.process f1 7
+let _ = Misc.process f 7
 
-let f2 path =
+let f path =
     path
     |> open_in
     |> Seq.unfold Misc.input_line
@@ -21,5 +20,5 @@ let f2 path =
     |> Seq.fold_left (fun (x0, x1, x2, i) x3 -> let x3 = int_of_string x3 in (x1, x2, x3, i + if x3 > x0 then 1 else 0)) (x0, x1, x2, 0)
     |> fun (_, _, _, i) -> i
 
-    let _ = Misc.process f2 5
+let _ = Misc.process f 5
   

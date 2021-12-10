@@ -1,11 +1,7 @@
 let rec iter f n x = if n = 0 then x else iter f (n - 1) (f x) 
 
-let rec span f acc = function
-| x :: u when f x -> span f (x :: acc) u
-| u -> acc, u 
-
 let rec loop = function
-| x :: u -> let xs, u = span ((=) x) [] u in (int_of_string x, List.length (x :: xs)) :: loop u
+| x :: u -> let xs, u = Misc.span ((=) x) [] u in (int_of_string x, List.length (x :: xs)) :: loop u
 | [] -> []
 
 let add_fish (f0, f1, f2, f3, f4, f5, f6, f7, f8) = function
