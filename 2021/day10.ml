@@ -2,14 +2,8 @@ type bracket = Round | Squar | Curly | Angle
 type chunk = R of bracket | L of bracket
 
 let to_bracket = function
-| '(' -> R Round
-| '[' -> R Squar
-| '{' -> R Curly
-| '<' -> R Angle
-| ')' -> L Round
-| ']' -> L Squar
-| '}' -> L Curly
-| '>' -> L Angle
+| '(' -> R Round | '[' -> R Squar | '{' -> R Curly | '<' -> R Angle
+| ')' -> L Round | ']' -> L Squar | '}' -> L Curly | '>' -> L Angle
 | _ -> failwith "to_bracket"
 
 let step stack c = match stack, to_bracket c with

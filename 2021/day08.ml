@@ -11,42 +11,29 @@ let f path =
 
 let _ = Misc.process f 26
 
-let f str = str |> String.to_seq |> Seq.fold_left (fun n c -> n lor (1 lsl (int_of_char c - 97))) 0
-
 let limp x y = (x land y) = x 
 
 let rec length n = if n = 0 then 0 else n land 1 + length (n lsr 1)  
 
 let infer u x =
-  if List.find (fun set -> length set = 2) u = x then 1
-  else if List.find (fun set -> length set = 7) u = x then 8
-  else
-  let l7 = u |> List.find (fun set -> length set = 3) in
-  let l4 = u |> List.find (fun set -> length set = 4) in
-  if l7 = x then 7
+  let test_length n set = length set = n in
+  if x = List.find (test_length 2) u then 1
+  else if x = List.find (test_length 7) u then 8
+  else let l7, l4 = u |> List.find (test_length 3), u |> List.find (test_length 4) in if x = l7 then 7
   else if l4 = x then 4
-  else
-  let s096 = u |> List.filter (fun set -> length set = 6) in
-  let s325 = u |> List.filter (fun set -> length set = 5) in
-  let l3, s25 = s325 |> List.partition (fun set -> limp l7 set) |> fun (u, v) -> (List.hd u, Fun.id v) in
-  if l3 = x then 3
-  else
-  let l9, s06 = s096 |> List.partition (fun set -> limp l4 set) |> fun (u, v) -> (List.hd u, Fun.id v) in
-  if l9 = x then 9
-  else
-  let l0, l6 = s06 |> List.partition (fun set -> limp l7 set) |> fun (u, v) -> (List.hd u, List.hd v) in 
-  if l0 = x then 0
-  else if l6 = x then 6
-  else
-  let l5, _ = s25 |> List.partition (fun set -> limp set l9 ) |> fun (u, v) -> (List.hd u, List.hd v) in
-  if x = l5 then 5
+  else let l3, s25 = u |> List.filter (test_length 5) |> List.partition (limp l7) in if [x] = l3 then 3
+  else let l9, s06 = u |> List.filter (test_length 6) |> List.partition (limp l4) in if [x] = l9 then 9
+  else let l0, l6 = s06 |> List.partition (limp l7) in if [x] = l0 then 0
+  else if [x] = l6 then 6
+  else if x = List.find (Fun.flip limp (List.hd l9)) s25 then 5
   else 2
 
  let f path =
+  let g str = str |> String.split_on_char ' ' |> List.map (fun str -> str |> String.to_seq |> Seq.fold_left (fun n c -> n lor (1 lsl (int_of_char c - 97))) 0) in
   path
   |> open_in
   |> Seq.unfold Misc.input_line
-  |> Seq.map (fun str -> String.sub str 0 58 |> String.split_on_char ' ' |> List.map f, String.sub str 61 (String.length str - 61) |> String.split_on_char ' ' |> List.map f)
+  |> Seq.map (fun str -> String.sub str 0 58 |> g, String.sub str 61 (String.length str - 61) |> g)
   |> Seq.map (fun (u, v) -> List.fold_left (fun x d -> 10 * x + d) 0 (List.map (infer (List.sort_uniq compare (u @ v))) v))
   |> Seq.fold_left (+) 0
 
