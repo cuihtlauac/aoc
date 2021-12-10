@@ -19,17 +19,16 @@ let add_fish (f0, f1, f2, f3, f4, f5, f6, f7, f8) = function
 | (7, n) -> f0, f1, f2, f3, f4, f5, f6, f7 + n, f8
 | (_, n) -> f0, f1, f2, f3, f4, f5, f6, f7, f8 + n
 
-let process n =
-  "day06.data"
+let f n path =
+  path
   |> open_in
-  |> input_line
+  |> Stdlib.input_line
   |> String.split_on_char ','
   |> List.sort compare
   |> loop
   |> List.fold_left add_fish (0, 0, 0, 0, 0, 0, 0, 0, 0)
   |> iter (fun (f0, f1, f2, f3, f4, f5, f6, f7, f8) -> f1, f2, f3, f4, f5, f6, f0 + f7, f8, f0) n
   |> (fun (f0, f1, f2, f3, f4, f5, f6, f7, f8) -> f0 + f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8)
-  |> Printf.printf "%i\n"
 
-  let _ = process 80
-  let _ = process 256
+  let _ = Misc.process (f 80) 5934
+  let _ = Misc.process (f 256) 26984457539

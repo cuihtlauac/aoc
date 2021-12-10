@@ -1,5 +1,3 @@
-let read_line cin = try Some (Stdlib.input_line cin, cin) with End_of_file -> None
-
 type bracket = Round | Squar | Curly | Angle 
 type chunk = R of bracket | L of bracket
 
@@ -23,23 +21,24 @@ let step stack c = match stack, to_bracket c with
 | Either.Left _, L Angle -> Either.Right 25137
 | Either.Right c, _ -> Either.Right c
 
-let _ =
-  "day10.data"
+let f path =
+  path
   |> open_in
-  |> Seq.unfold read_line
+  |> Seq.unfold Misc.input_line
   |> Seq.map (fun str ->
     str
     |> String.to_seq
     |> Seq.fold_left step (Either.Left [])
-    |> (function Either.Right x -> x | Either.Left _ -> 0)
+    |> function Either.Right x -> x | Either.Left _ -> 0
   )
   |> Seq.fold_left (+) 0
-  |> Printf.printf "%i\n"
 
-let _ =
-  "day10.data"
+let _ = Misc.process f 26397
+
+let f path =
+  path
   |> open_in
-  |> Seq.unfold read_line
+  |> Seq.unfold Misc.input_line
   |> Seq.map (fun str ->
     str
     |> String.to_seq
@@ -50,4 +49,7 @@ let _ =
   |> List.of_seq
   |> List.sort compare
   |> fun u -> List.nth u (List.length u / 2)
-  |> Printf.printf "%i\n"
+
+  let _ = Misc.process f 288957
+  
+  

@@ -1,9 +1,7 @@
-let read_line cin = try Some (Stdlib.input_line cin, cin) with End_of_file -> None
-
 let f cin = cin |> Stdlib.input_line |> String.split_on_char ' ' |> List.map String.trim |> List.filter ((<>) "") |> List.map (fun x -> x |> int_of_string |> Either.left)
 
 let read_board cin = try 
-    let _ = read_line cin in
+    let _ = Misc.input_line cin in
     let a = f cin in
     let b = f cin in
     let c = f cin in
@@ -32,11 +30,13 @@ let rec loop boards i u = match List.find_opt win boards, u with
     | None, i :: rnd -> loop (List.map (mark i) boards) i rnd 
     | _, [] -> failwith "loop"
     
-let _ =
-    let input = "day04.data" |> open_in in 
-    let rnd = input |> read_line |> Option.map (fun x -> x |> fst |> String.split_on_char ',') |> Option.get |> List.map int_of_string in
+let f path =
+    let input = path |> open_in in 
+    let rnd = input |> Misc.input_line |> Option.map (fun x -> x |> fst |> String.split_on_char ',') |> Option.get |> List.map int_of_string in
     let boards = input |> Seq.unfold read_board |> List.of_seq in
-    Printf.printf "%i\n" (loop boards min_int rnd) 
+    loop boards min_int rnd
+
+let _ = Misc.process f 4512 
 
 let rec loop2 winners  (boards : (int, 'a) Either.t list list list) = function
   | [] -> winners |> List.hd |> (fun (w, i) -> score i (List.hd w))
@@ -47,8 +47,10 @@ let rec loop2 winners  (boards : (int, 'a) Either.t list list list) = function
     else 
       loop2 winners boards rnd
   
-let _ =
-    let input = "day04.data" |> open_in in 
-    let rnd = input |> read_line |> Option.map (fun x -> x |> fst |> String.split_on_char ',') |> Option.get |> List.map int_of_string in
+let f path =
+    let input = path |> open_in in 
+    let rnd = input |> Misc.input_line |> Option.map (fun x -> x |> fst |> String.split_on_char ',') |> Option.get |> List.map int_of_string in
     let boards = input |> Seq.unfold read_board |> List.of_seq in
-    Printf.printf "%i\n" (loop2 [] boards rnd) 
+    loop2 [] boards rnd 
+
+    let _ = Misc.process f 1924

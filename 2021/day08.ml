@@ -1,16 +1,15 @@
-let read_line cin = try Some (Stdlib.input_line cin, cin) with End_of_file -> None
-
-let _ =
-  "day08.data"
+let f path =
+  path
   |> open_in
-  |> Seq.unfold read_line
+  |> Seq.unfold Misc.input_line
   |> Seq.map (fun str ->
     String.sub str 61 (String.length str - 61)
     |> String.split_on_char ' '
     |> List.filter_map (fun str -> if String.length str <= 4 || String.length str = 7 then Some str else None)
   )
   |> Seq.fold_left (fun n u -> n + List.length u) 0
-  |> Printf.printf "%i\n"
+
+let _ = Misc.process f 26
 
 let f str = str |> String.to_seq |> Seq.fold_left (fun n c -> n lor (1 lsl (int_of_char c - 97))) 0
 
@@ -39,17 +38,16 @@ let infer u x =
   if l0 = x then 0
   else if l6 = x then 6
   else
-  let l5, l2 = s25 |> List.partition (fun set -> limp set l9 ) |> fun (u, v) -> (List.hd u, List.hd v) in
+  let l5, _ = s25 |> List.partition (fun set -> limp set l9 ) |> fun (u, v) -> (List.hd u, List.hd v) in
   if x = l5 then 5
   else 2
 
-
- let a =
-  "day08.data"
+ let f path =
+  path
   |> open_in
-  |> Seq.unfold read_line
+  |> Seq.unfold Misc.input_line
   |> Seq.map (fun str -> String.sub str 0 58 |> String.split_on_char ' ' |> List.map f, String.sub str 61 (String.length str - 61) |> String.split_on_char ' ' |> List.map f)
   |> Seq.map (fun (u, v) -> List.fold_left (fun x d -> 10 * x + d) 0 (List.map (infer (List.sort_uniq compare (u @ v))) v))
   |> Seq.fold_left (+) 0
-  |> Printf.printf "%i\n"
 
+let _ = Misc.process f 61229

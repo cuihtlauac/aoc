@@ -1,24 +1,25 @@
-let read_line cin = try Some (Stdlib.input_line cin, cin) with End_of_file -> None
 
-let _ =
-    "day01.data"
+let f1 path =
+    path
     |> open_in
-    |> Seq.unfold read_line
-    |> List.of_seq
-    |> List.map int_of_string
-    |> (fun u -> List.hd u, List.tl u)
-    |> (fun (hd, tl) -> List.fold_left (fun (i, x') x -> ((i + if x > x' then 1 else 0), x)) (0, hd) tl)
-    |> fst
-    |> Printf.printf "%i\n"
+    |> Seq.unfold Misc.input_line
+    |> (|>) ()
+    |> function Seq.Nil -> failwith "" | Seq.Cons (str, seq) -> let x = int_of_string str in seq 
+    |> Seq.fold_left (fun (i, x) str -> let y = int_of_string str in i + max 0 (compare y x), y) (0, x)
+    |> fst 
 
-let _ =
-    "day01.data"
+let _ = Misc.process f1 7
+
+let f2 path =
+    path
     |> open_in
-    |> Seq.unfold read_line
-    |> List.of_seq
-    |> List.map int_of_string
-    |> (fun u -> List.nth u 0, List.nth u 1, List.nth u 2, u |> List.tl |> List.tl |> List.tl)
-    |> (fun (u0, u1, u2, tl) -> List.fold_left (fun (x0, x1, x2, i) x3 -> (x1, x2, x3, i + if x1 + x2 + x3 > x0 + x1 + x2 then 1 else 0)) (u0, u1, u2, 0) tl)
-    |> (fun (_, _, _, i) -> i)
-    |> Printf.printf "%i\n"
+    |> Seq.unfold Misc.input_line
+    |> (|>) ()
+    |> function Seq.Nil -> failwith "" | Seq.Cons (x0, seq) -> let x0 = int_of_string x0 in seq ()
+    |> function Seq.Nil -> failwith "" | Seq.Cons (x1, seq) -> let x1 = int_of_string x1 in seq ()
+    |> function Seq.Nil -> failwith "" | Seq.Cons (x2, seq) -> let x2 = int_of_string x2 in seq 
+    |> Seq.fold_left (fun (x0, x1, x2, i) x3 -> let x3 = int_of_string x3 in (x1, x2, x3, i + if x3 > x0 then 1 else 0)) (x0, x1, x2, 0)
+    |> fun (_, _, _, i) -> i
 
+    let _ = Misc.process f2 5
+  

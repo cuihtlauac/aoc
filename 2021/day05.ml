@@ -1,5 +1,3 @@
-let read_line cin = try Some (Stdlib.input_line cin, cin) with End_of_file -> None
-
 let rec span f acc = function
 | x :: u when f x -> span f (x :: acc) u
 | u -> acc, u 
@@ -14,23 +12,24 @@ let rec loop = function
 | x :: u -> let xs, u = span ((=) x) [] u in loop u + compare (List.length xs) 0 
 | [] -> 0
 
-let _ =
-    "day05.data"
+let f path =
+    path
     |> open_in
-    |> Seq.unfold read_line
+    |> Seq.unfold Misc.input_line
     |> Seq.concat_map (fun str -> Scanf.sscanf str "%i,%i -> %i,%i" (fun x1 y1 x2 y2 -> if x1 = x2 || y1 = y2 then line x1 y1 x2 y2 else Seq.empty))
     |> List.of_seq
     |> List.sort compare
     |> loop
-    |> Printf.printf "%i\n"
 
-let _ =
-    "day05.data"
+let _ = Misc.process f 5
+
+let f path =
+    path
     |> open_in
-    |> Seq.unfold read_line
+    |> Seq.unfold Misc.input_line
     |> Seq.concat_map (fun str -> Scanf.sscanf str "%i,%i -> %i,%i" line)
     |> List.of_seq
     |> List.sort compare
     |> loop
-    |> Printf.printf "%i\n"
-    
+
+let _ = Misc.process f 12
