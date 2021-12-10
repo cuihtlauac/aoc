@@ -1,0 +1,2 @@
+dune exec ./dayXX.exe test
+dune exec ./dayXX.exe
