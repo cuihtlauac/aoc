@@ -5,18 +5,17 @@ let cache_update x x' pos set = set |> Cache.remove (x, pos) |> Cache.add (x', p
 
 let rec loop mat visited border =
     let len, (i, j) = Cache.min_elt border in
-    let border = Cache.remove (len, (i, j)) border in
-    let visited = Visit.add (i, j) visited in
     if i = Array.length mat - 1 && j = Array.length mat - 1 then
         len
     else
         let g pos border =
-            match (try Some mat.(fst pos).(snd pos) with Invalid_argument _ -> None), Visit.find_opt pos visited, Option.map fst (Cache.find_last_opt (fun (_, x) -> x = pos) border) with
-            | Some x, None, Some len' when len + x < len' -> border |> cache_update len' len  pos
-            | Some x, None, None -> Cache.add (len + x, pos) border
+            match (try Some mat.(fst pos).(snd pos) with Invalid_argument _ -> None), Visit.mem pos visited, Option.map fst (Cache.find_last_opt (fun (_, x) -> x = pos) border) with
+            | _, true, None -> border
+            | Some x, false, None -> Cache.add (len + x, pos) border
+            | Some x, false, Some len' when len + x < len' -> border |> cache_update len' len  pos
             | _ -> border
             in
-            border |> g (i, j - 1) |> g (i, j + 1) |> g (i - 1, j) |> g (i + 1, j) |> loop mat visited
+        border |> Cache.remove (len, (i, j)) |> g (i, j - 1) |> g (i, j + 1) |> g (i - 1, j) |> g (i + 1, j) |> loop mat (Visit.add (i, j) visited)
     
 let f path =
     let mat = 
