@@ -9,6 +9,29 @@ let diags len =
 
 let def f x y z = if x = z then y else f z
 
+module Cache = Set.Make(struct type t = (int * int) * int let compare (_, a) (_, b) = compare a b end)
+
+let rec loop mat visited border =
+    let (i, j), len = try Cache.min_elt border with | e -> Printf.printf "bang!"; raise e in
+    let border = Cache.remove ((i, j), len) border in
+    Printf.printf "%i %i: \n" i j;
+    if i = Array.length mat - 1 && j = Array.length mat - 1 then
+        len
+    else
+        let visited = ((i, j), len) :: visited in
+        let g pos border = match (try Some mat.(i).(j) with _ -> None), List.assoc_opt pos visited, (Cache.find_last_opt (fun (x, _) -> x = pos) border) with
+        | None,   _,      _ -> border (* not in mat *)
+        | _,      Some _, _  -> border (* already visited *)
+        | Some x, _,      Some (_, len') when len + x < len' -> border |> Cache.remove (pos, len') |> Cache.add (pos, len + x)
+        | Some _, None,   Some (_, _) -> border (* not better *)
+        | Some x, _,      None -> border |> Cache.add (pos, len + x) 
+    in
+        let border = g (i, j - 1) border in
+        let border = g (i, j + 1) border in
+        let border = g (i - 1, j) border in
+        let border = g (i + 1, j) border in
+        loop mat visited border
+
 let f path =
     let mat = 
         path
@@ -16,10 +39,7 @@ let f path =
         |> Seq.unfold Misc.input_line
         |> Seq.map (fun str -> str |> String.to_seq |> Seq.map (fun c -> int_of_char c - 48) |> Array.of_seq)
         |> Array.of_seq in
-    let len = Array.length mat in
-    diags len
-    |> List.fold_left (fun f (i, j) -> def f (i, j) (mat.(i).(j) + min (f (i - 1, j)) (f (i, j - 1)))) (fun (i, j) -> if i + j < 0 then 0 else max_int) 
-    |> (|>) (len - 1, len -1)
+    loop mat [] (Cache.singleton ((0, 0), mat.(0).(0)))
     |> fun n -> n - mat.(0).(0)
 
 let _ = Misc.process f 40
