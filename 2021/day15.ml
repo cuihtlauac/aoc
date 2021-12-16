@@ -46,3 +46,4 @@ let f path =
         |> Array.of_seq in
     loop (mat5 mat) [] (Cache.singleton (0, (0, 0)))
 
+let _ = Misc.process f 315
