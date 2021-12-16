@@ -10,4 +10,4 @@ let process f x =
       if f (day ^ ".test") = x then "PASS" else "FAIL"
   else
       day ^ ".data" |> f |> string_of_int end
-  |> Printf.printf "%s\n"
+  |> fun str -> Printf.printf "%s\n" str; flush stdout
