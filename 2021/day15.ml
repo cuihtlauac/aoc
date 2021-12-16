@@ -12,7 +12,7 @@ let rec loop mat visited border =
             match (try Some mat.(fst pos).(snd pos) with Invalid_argument _ -> None), Visit.mem pos visited, Option.map fst (Cache.find_last_opt (fun (_, x) -> x = pos) border) with
             | _, true, None -> border
             | Some x, false, None -> Cache.add (len + x, pos) border
-            | Some x, false, Some len' when len + x < len' -> border |> cache_update len' len  pos
+            | Some x, false, Some len' when len + x < len' -> cache_update len' len  pos border
             | _ -> border
             in
         border |> Cache.remove (len, (i, j)) |> g (i, j - 1) |> g (i, j + 1) |> g (i - 1, j) |> g (i + 1, j) |> loop mat (Visit.add (i, j) visited)
