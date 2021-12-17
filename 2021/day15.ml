@@ -1,5 +1,5 @@
 module Cache = Set.Make(struct type t = int * (int * int) let compare = compare end)
-module Visit = Set.Make(struct type t = int * int let compare = compare end)
+module Visit = Set.Make(struct type t = int * int let compare = Fun.flip compare end)
 
 let cache_update x x' pos set = set |> Cache.remove (x, pos) |> Cache.add (x', pos)
 
