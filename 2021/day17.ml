@@ -49,9 +49,9 @@ let reachs min_x max_x min_y max_y n =
   n |> speeds |> List.map (flight_path min_x max_x min_y max_y) |> List.filter_map (function p :: _ when (is_reach min_x max_x min_y max_y p) -> Some p | _ -> None) |> List.length  
   
   let rec seq_filter p seq = match seq () with
-  | Seq.Nil -> Seq.Nil
+  | Seq.Nil -> fun () -> Seq.Nil
   | Seq.Cons (x, seq) when p x -> fun () -> Seq.Cons (x, fun () -> seq_filter p seq ()) 
-  | Seq.Cons (_, seq) -> fun () -> seq_filter p seq ()
+  | Seq.Cons (_, seq) -> seq_filter p seq
 
   let u = [
   (23,-10); (25,-9); (27,-5); (29,-6); (22,-6); (21,-7); (9,0); (27,-7); (24,-5);
