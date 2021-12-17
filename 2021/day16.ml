@@ -39,9 +39,9 @@ let rec eval = function
 | Op (_, 1, u) -> List.fold_left (fun n p -> n * eval p) 1 u
 | Op (_, 2, u) -> List.fold_left (fun n p -> min n (eval p)) max_int u
 | Op (_, 3, u) -> List.fold_left (fun n p -> max n (eval p)) min_int u
-| Op (_, 5, u) -> if List.nth u 0 > List.nth u 1 then 1 else 0  
-| Op (_, 6, u) -> if List.nth u 0 < List.nth u 1 then 1 else 0
-| Op (_, 7, u) -> if List.nth u 0 = List.nth u 1 then 1 else 0
+| Op (_, 5, u) -> if eval (List.nth u 0) > eval (List.nth u 1) then 1 else 0  
+| Op (_, 6, u) -> if eval (List.nth u 0) < eval (List.nth u 1) then 1 else 0
+| Op (_, 7, u) -> if eval (List.nth u 0) = eval (List.nth u 1) then 1 else 0
 | _ -> failwith "eval"
 
 let lit_header = bits 3 >>= fun v -> bits 3 >>= function [1; 0; 0] -> return v | _ -> fail
