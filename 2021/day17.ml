@@ -1,57 +1,58 @@
-let test = "target area: x=20..30, y=-10..-5"
-let data = "target area: x=240..292, y=-90..-57"
+let read str = Scanf.sscanf str "target area: x=%i..%i, y=%i..%i" (fun a b c d -> (a, b, c, d))
+let test = read "target area: x=20..30, y=-10..-5" 
+let data = read "target area: x=240..292, y=-90..-57"
 
-let fly min_x max_x min_y _ (x, y, vx, vy) =
-  if x < min_x && vx < 0 then
-    None
-  else if x > max_x && vx > 0 then
-    None
-  else if y < min_y && vy < 0 then
-    None
-  else
-    Some ((x, y), (x + vx, y + vy, vx + compare 0 vx, vy - 1))
+let fly (min_x, max_x, min_y, _) (x, y, vx, vy) =
+  if x < min_x && vx < 0 then None
+  else if x > max_x && vx > 0 then None
+  else if y < min_y && vy < 0 then None
+  else Some ((x, y), (x + vx, y + vy, vx + compare 0 vx, vy - 1))
 
 let list_unfold_rev f =
   let rec loop acc x = match f x with Some (y, x') -> loop (y :: acc) x' | _ -> acc in
   loop []
 
-let is_reach min_x max_x min_y max_y (x, y) = min_x <= x && x <= max_x && min_y <= y && y <= max_y
+let is_reach (min_x, max_x, min_y, max_y) (x, y) = min_x <= x && x <= max_x && min_y <= y && y <= max_y
 let rec seq_bang x () = Seq.Cons (x, seq_bang x)
 
 let seq_take_rev n = 
     let rec loop acc n seq = match seq () with Seq.Cons (x, seq) when n > 0 -> loop (x :: acc) (n - 1) seq | _ -> acc in
     loop [] n
 
-let flight_path min_x max_x min_y max_y (vx, vy) = list_unfold_rev (fly min_x max_x min_y max_y) (0, 0, vx, vy)
+let flight_path range (vx, vy) = list_unfold_rev (fly range) (0, 0, vx, vy)
 
-let heights min_x max_x min_y max_y n =
+let hit range (vx0, vy0) =
+  let rec loop (x, y, vx, vy) =
+    is_reach range (x, y) || (match fly range (x, y, vx, vy) with Some pos -> loop (snd pos) | _ -> false) in
+  loop (0, 0, vx0, vy0)
+
+
+let heights range n =
   n
   |> Seq.unfold (fun x -> Some (x, x + 1))
   |> Seq.map (fun n -> (n, 1))
   |> Seq.concat_map (Seq.unfold (fun (x, y) -> if x > 0 then Some ((x, y), (x - 1, y + 1)) else None))
-  |> Seq.map (flight_path min_x max_x min_y max_y)
-  |> Seq.filter (fun u -> u |> List.hd |> is_reach min_x max_x min_y max_y) (* BANG! *)
+  |> Seq.map (flight_path range)
+  |> Seq.filter (fun u -> u |> List.hd |> is_reach range) (* BANG! *)
   |> Seq.map (List.map snd)
   |> Seq.map (List.sort (Fun.flip compare))
   |> Seq.map List.hd
 
 (* first star *)
-let _ = heights 240 292 (-90) (-57) 5 |> seq_take_rev (128 + 32 + 4 + 2) |> List.sort compare
-
-let rec fix f x = let x' = f x in if x = x' then x else fix f x'
+let _ = heights (240, 292, -90, -57) 5 |> seq_take_rev (128 + 32 + 4 + 2) |> List.sort compare
 
 let speeds =
   0
   |> Seq.unfold (fun x -> Some (x, x + 1))
-  |> Seq.concat_map (fun n -> Seq.unfold (fun x -> if x >= (-n) then Some ((x, n - abs x), (x - 1)) else None) n)
+  |> Seq.concat_map (fun n -> Seq.unfold (fun x -> if x >= (-n) then Some ((n - abs x, x), (x - 1)) else None) n)
 
-let reachs min_x max_x min_y max_y n =
-  n |> speeds |> List.map (flight_path min_x max_x min_y max_y) |> List.filter_map (function p :: _ when (is_reach min_x max_x min_y max_y p) -> Some p | _ -> None) |> List.length  
-  
-  let rec seq_filter p seq = match seq () with
-  | Seq.Nil -> fun () -> Seq.Nil
-  | Seq.Cons (x, seq) when p x -> fun () -> Seq.Cons (x, fun () -> seq_filter p seq ()) 
-  | Seq.Cons (_, seq) -> seq_filter p seq
+let rec loop range acc seq n =
+  if n = 0 then acc else match seq () with
+  | Seq.Nil -> failwith "loop"
+  | Seq.Cons (v, seq) -> if hit range v then loop range (v :: acc) seq (n - 1) else loop range acc seq (n - 1)
+
+
+
 
   let u = [
   (23,-10); (25,-9); (27,-5); (29,-6); (22,-6); (21,-7); (9,0); (27,-7); (24,-5);
@@ -69,8 +70,9 @@ let reachs min_x max_x min_y max_y n =
   (8,-2); (27,-8); (30,-5); (24,-7)
   ]
 
-  let rec diff u v = match (u, v) with
-  | [], [] -> []
-  | x :: u, y :: v -> if x = y then diff u v else (Either.Right (x, y)) :: diff u v
-  | [], y :: v -> Either.Left (Either.Right y) :: diff [] v
-  | x :: u, [] -> Either.Left (Either.Left x) :: diff u []
+let rec pos x seq n = match seq () with
+| Seq.Nil -> failwith "pos"
+| Seq.Cons (y, seq) -> if x = y then n else pos x seq (n + 1)
+
+(* Snd star *)
+let _ = loop (240, 292, -90, -57) [] speeds 2000000 |> List.length
