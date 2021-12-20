@@ -32,54 +32,41 @@ let explode_test = [
   "[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]";
   "[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]"
 ]
-
-let zip (path, snail) = 
-  let rec loop = function
-  | [] -> snail
-  | (true, right) :: path -> Pair (loop path, right)
-  | (false, left) :: path -> Pair (left, loop path)
-in loop path
-
-let rec zip' snail = function
+let rec zip snail = function
 | [] -> snail
-| (true, right) :: path -> zip' (Pair (snail, right)) path 
-| (false, left) :: path -> zip' (Pair (left, snail)) path
+| (true, right) :: path -> zip (Pair (snail, right)) path 
+| (false, left) :: path -> zip (Pair (left, snail)) path
 
-let rec foo n = function Int i -> Int (i + n) | Pair (l, r) -> Pair (foo n l, r)
-let rec bar n = function Int i -> Int (i + n) | Pair (l, r) -> Pair (l, bar n r)
+let rec add_leftmost n = function Int i -> Int (i + n) | Pair (l, r) -> Pair (add_leftmost n l, r)
+let rec add_rightmost n = function Int i -> Int (i + n) | Pair (l, r) -> Pair (l, add_rightmost n r)
 
-let rec add_leftmost n = function
+let rec add_closest_left n = function
 | [] -> []
-| (false, snail) :: path -> (false, bar n snail) :: path
-| step :: path -> step :: add_leftmost n path
+| (false, snail) :: path -> (false, add_rightmost n snail) :: path
+| step :: path -> step :: add_closest_left n path
 
-let rec add_rightmost n = function
+let rec add_closest_right n = function
 | [] -> []
-| (true, snail) :: path -> (true, foo n snail) :: path
-| step :: path -> step :: add_rightmost n path
+| (true, snail) :: path -> (true, add_leftmost n snail) :: path
+| step :: path -> step :: add_closest_right n path
 
-let rec explode_redex path = function
-  | Int i -> None, Int i
-  | Pair (l, r) -> match explode_redex ((true, r) :: path) l, explode_redex ((false, l) :: path) r with
-    | (None, l), (Some path, redex) -> Some ((false, l) :: path), redex
-    | (Some path, redex), (None, r) -> Some ((true, r) :: path), redex
-    | (Some lpath, redex), (Some rpath, r) -> Some ((true, zip (rpath, r)) :: lpath), redex
-    | (None, l), (None, r) -> (if List.length path > 3 then Some [] else None), Pair (l, r)
-
-let explode = function
-  | Some zipper, Pair (Int i, Int j) -> zip (zipper |> List.rev |> add_leftmost i |> add_rightmost j |> List.rev, Int 0)
-  | _, snail -> snail
+let explode snail =
+  let rec loop path = function
+  | Int _ -> None
+  | Pair (l, r) -> match loop ((true, r) :: path) l, loop ((false, l) :: path) r with
+    | None, None when List.length path > 3 -> Some (Pair (l, r), path)
+    | None, opt -> opt
+    | some, _ -> some in
+  match loop [] snail with
+  Some (Pair (Int i, Int j), zipper) -> zip (Int 0) (zipper |> add_closest_left i |> add_closest_right j)
+  | _ -> snail
 
 let split snail =
   let rec loop path = function
-  | Int i -> (if i < 10 then None else Some []), Int i
-  | Pair (l, r) -> match loop ((true, r) :: path) l, loop ((false, l) :: path) r with
-    | (None, l), (None, r) -> None, Pair (l, r)
-    | (None, l), (Some path, r) -> Some ((false, l) :: path), r
-    | (Some path, l), (None, r) -> Some ((true, r) :: path), l
-    | (Some path, l), (Some rpath, r) -> Some ((true, zip (rpath, r)) :: path), l in
+  | Int i -> if i < 10 then None else Some (Int i, path)
+  | Pair (l, r) -> match loop ((true, r) :: path) l with None -> loop ((false, l) :: path) r | some -> some in
   match loop [] snail with
-  | Some zipper, Int n -> zip (zipper, let n' = n / 2 in Pair (Int n', Int (n - n')))
+  | Some (Int n, zipper) -> zip (let n' = n / 2 in Pair (Int n', Int (n - n'))) zipper
   | _ -> snail
 
 let rec iter f n x = if n = 0 then x else iter f (n - 1) (f x)
@@ -97,7 +84,7 @@ let debug_redex (opt, sf) = begin match opt with
 let debug_snailfish sf = print_endline (to_string sf); sf
 
 let f sf =
-  let sf' = sf |> explode_redex [] |> explode in 
+  let sf' = sf |> explode in 
   if sf = sf' then split sf else sf'
 
 let add a b = fix f (Pair (a, b))
