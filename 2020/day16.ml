@@ -33,7 +33,7 @@ let invalid u n = Array.fold_left (fun result (_, (a, b), (c, d)) -> result && n
 
 let range m n = let rec loop i u = if m <= i then loop (i - 1) (i :: u) else u in loop n []
 
-let compat n (name, (a, b), (c, d)) = a <= n && n <= b || c <= n && n <= d
+let compat n (_, (a, b), (c, d)) = a <= n && n <= b || c <= n && n <= d
 
 module FieldSet = Set.Make(struct
     type t = string * (int * int) * (int * int)
@@ -42,7 +42,7 @@ end)
 
 let array_filter f a = Array.fold_right (fun x u -> if f x then x :: u else u) a []
 
-let rec resolve u = 
+let rec resolve u =
     let singletons = Array.fold_left (fun t s -> if FieldSet.cardinal s = 1 then FieldSet.union s t else t) FieldSet.empty u in
     if FieldSet.cardinal singletons = Array.length u then
         u |> Array.map FieldSet.choose |> Array.to_list
@@ -52,8 +52,8 @@ let rec resolve u =
 let _ =
     let fields = Array.map (fun (name, a, b) -> name, parse_range a, parse_range b) field in
     "day16b.input" |> read_data
-    |> Seq.map (fun str -> str |> String.split_on_char ',' |> List.filter_map (fun str -> let n = int_of_string str in if invalid fields n then Some n else None) |> List.fold_left (+) 0)        
-    |> Seq.fold_left (+) 0    
+    |> Seq.map (fun str -> str |> String.split_on_char ',' |> List.filter_map (fun str -> let n = int_of_string str in if invalid fields n then Some n else None) |> List.fold_left (+) 0)
+    |> Seq.fold_left (+) 0
     |> Printf.printf "%i\n"
 
 let _ =

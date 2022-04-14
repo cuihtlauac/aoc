@@ -1,2 +1,5 @@
-dune exec ./dayXX.exe test
-dune exec ./dayXX.exe
+Second attempt at advent of code. Still dirty and incomplete.
+
+https://adventofcode.com/2021
+
+dune exec ./day{n}.exe
